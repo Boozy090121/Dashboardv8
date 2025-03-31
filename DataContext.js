@@ -33,8 +33,8 @@ export const DataProvider = ({ children }) => {
     const abortController = new AbortController();
     
     // Pass the abort signal to loadData (needs modification to accept it)
-    // loadData(abortController.signal); // << TEMPORARILY COMMENT OUT to prevent initial load
-    console.log("TEMPORARILY SKIPPING loadData() on mount"); // Add log
+    loadData(abortController.signal); // << RESTORE call
+    // console.log("TEMPORARILY SKIPPING loadData() on mount");
     
     // Cleanup function to abort the fetch on unmount
     return () => {
