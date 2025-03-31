@@ -14,8 +14,17 @@ const NovoNordiskDashboard = () => {
   }
 
   // If we reach here, data is loaded and there is no error
-  console.log("NovoNordiskDashboard rendering with data:", data);
+  console.log("NovoNordiskDashboard rendering with data (but returning placeholder):", data);
 
+  // TEMPORARILY return a placeholder instead of rendering data
+  return (
+    <div className="p-4">
+       <h1>NovoNordiskDashboard Rendered (Placeholder)</h1>
+       <p>Check console for data and further errors.</p>
+    </div>
+  );
+
+  /* Original Render Logic - Temporarily Commented Out
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Novo Nordisk Manufacturing Dashboard</h1>
@@ -39,6 +48,7 @@ const NovoNordiskDashboard = () => {
       </div>
     </div>
   );
+  */
 };
 
 export default NovoNordiskDashboard; 
