@@ -29,6 +29,19 @@ echo "Data generated successfully!"
 echo "Data file contents preview:"
 head -n 20 ./public/data/complete-data.json
 
+# Create a fallback for the missing CustomerCommentAnalysis component
+echo "Creating fallback for missing customer-comment-analysis.js file..."
+cat > src/customer-comment-analysis.js << 'EOL'
+// Fallback file created during build
+import React from 'react';
+import CustomerCommentAnalysisComponent from './customer-comment-analysis.tsx';
+
+// Re-export the component from the TypeScript file
+const CustomerCommentAnalysis = CustomerCommentAnalysisComponent;
+export { CustomerCommentAnalysis };
+export default CustomerCommentAnalysis;
+EOL
+
 # Step 4: Build React app
 echo "Building React app..."
 CI=false TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false react-scripts build
