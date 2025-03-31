@@ -1,0 +1,13 @@
+[build]
+  command = "chmod +x netlify-build.sh && ./netlify-build.sh"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "18.17.0"
+  NPM_VERSION = "9.6.7"
+
+# Handle React Router's client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 
