@@ -113,8 +113,19 @@ export const DataProvider = ({ children }) => {
     data: state.data,
     fileStatus: state.fileStatus,
     lastUpdated: state.lastUpdated,
-    refreshData: loadData // Use the memoized loadData
-  }), [state.isLoading, state.error, state.data, state.fileStatus, state.lastUpdated, loadData]);
+    // Add a wrapper function for logging refreshData calls
+    refreshData: () => {
+      console.log("*** refreshData called via context! ***"); // Add specific log
+      loadData(); // Call the actual loadData
+    }
+  }), [
+    state.isLoading, 
+    state.error, 
+    state.data, 
+    state.fileStatus, 
+    state.lastUpdated, 
+    loadData // Keep loadData as dependency for the memo
+  ]);
 
   return (
     <DataContext.Provider value={contextValue}>
