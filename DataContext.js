@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 // Create the context
 const DataContext = createContext(undefined);
@@ -25,8 +25,8 @@ export const DataProvider = ({ children }) => {
     }
   });
 
-  // Load data function
-  const loadData = async () => {
+  // Wrap loadData in useCallback
+  const loadData = useCallback(async () => {
     // Initial loading state
     setState(prev => ({
       ...prev,
@@ -97,22 +97,24 @@ export const DataProvider = ({ children }) => {
       // Apply the final state update once
       setState(prevState => ({ ...prevState, ...finalStateUpdate }));
     }
-  };
+  // Empty dependency array for useCallback as loadData's definition doesn't depend on props/state
+  }, []);
 
   // Load data on mount
   useEffect(() => {
     loadData();
-  }, []);
+  // loadData is now stable due to useCallback, but keep empty array for mount-only behavior
+  }, [loadData]); // Changed to include loadData, though technically [] worked before
 
-  // Create the context value
-  const contextValue = {
+  // Memoize the context value
+  const contextValue = useMemo(() => ({
     isLoading: state.isLoading,
     error: state.error,
     data: state.data,
     fileStatus: state.fileStatus,
     lastUpdated: state.lastUpdated,
-    refreshData: loadData // refreshData simply calls loadData again
-  };
+    refreshData: loadData // Use the memoized loadData
+  }), [state.isLoading, state.error, state.data, state.fileStatus, state.lastUpdated, loadData]);
 
   return (
     <DataContext.Provider value={contextValue}>
