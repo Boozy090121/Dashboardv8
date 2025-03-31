@@ -14,7 +14,6 @@ const NovoNordiskDashboard = () => {
   }
 
   // If we reach here, data is loaded and there is no error
-  console.log("NovoNordiskDashboard rendering with data (but returning placeholder):", data);
 
   // TEMPORARILY return a placeholder instead of rendering data
   return (
