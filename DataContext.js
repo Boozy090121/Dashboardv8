@@ -103,8 +103,8 @@ export const DataProvider = ({ children }) => {
   // Load data on mount
   useEffect(() => {
     loadData();
-  // loadData is now stable due to useCallback, but keep empty array for mount-only behavior
-  }, [loadData]); // Changed to include loadData, though technically [] worked before
+  // Ensure this runs only once on mount
+  }, []); // Changed back to empty dependency array
 
   // Memoize the context value
   const contextValue = useMemo(() => ({
