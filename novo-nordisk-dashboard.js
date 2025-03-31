@@ -5,7 +5,6 @@ import { FileText, AlertTriangle, Clock, CheckCircle, BarChart2, Activity, Setti
 // Import our specialized components
 import FormErrorAnalysis from './form-error-analysis.js';
 import NNReviewTimeAnalysis from './nn-review-analysis.js';
-import CustomerCommentAnalysis from './customer-comment-analysis.tsx';
 import ProcessFlowVisualization from './process-flow-visualization.js';
 import InsightsDashboard from './insights-dashboard.js';
 import LotAnalytics from './lot-analytics.js';
@@ -508,7 +507,10 @@ const NovoNordiskDashboard = () => {
             
             {activeTab === 'external' && (
               <div className="fade-in">
-                <CustomerCommentAnalysis />
+                <div className="bg-white rounded-lg shadow p-8 text-center">
+                  <h2 className="text-xl font-semibold mb-2">Tab Under Development</h2>
+                  <p className="text-gray-500">The {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} dashboard tab is currently being implemented.</p>
+                </div>
               </div>
             )}
             
