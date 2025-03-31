@@ -5,7 +5,7 @@ import { FileText, AlertTriangle, Clock, CheckCircle, BarChart2, Activity, Setti
 // Import our specialized components
 import FormErrorAnalysis from './form-error-analysis.js';
 import NNReviewTimeAnalysis from './nn-review-analysis.js';
-import CustomerCommentAnalysis from './customer-comment-analysis-wrapper.js';
+import CustomerCommentAnalysis from './customer-comment-analysis.tsx';
 import ProcessFlowVisualization from './process-flow-visualization.js';
 import InsightsDashboard from './insights-dashboard.js';
 import LotAnalytics from './lot-analytics.js';
