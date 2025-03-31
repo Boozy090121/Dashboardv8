@@ -2,7 +2,7 @@ import React from 'react';
 // import NovoNordiskDashboard from './novo-nordisk-dashboard'; // Temporarily comment out
 import { DataProvider } from './DataContext.js';
 
-const App: React.FC = () => {
+const App = () => {
   return (
     <DataProvider>
       {/* <NovoNordiskDashboard /> */}
