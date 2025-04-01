@@ -20,7 +20,7 @@
     "debug-data": "node scripts/data-debugger.js",
     "generate-data": "node generate-dashboard-data.js",
     "preprocess": "node preprocess-excel.js",
-    "prebuild": "npm run preprocess && npm run generate-data",
+    "prebuild": "echo 'Skipping preprocessing, using existing data files'",
     "start": "react-scripts start",
     "build": "CI=false TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",

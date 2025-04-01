@@ -25,41 +25,62 @@ export const DataProvider = ({ children }) => {
     }
   });
 
+  // Create a ref to store the current AbortController
+  const abortControllerRef = React.useRef(null);
+
   // Load data on mount
   useEffect(() => {
-    console.log("DataProvider mount useEffect triggered"); // Log mount effect
+    console.log("DataProvider mount useEffect triggered");
     
     // Create an AbortController to cancel the fetch if the component unmounts
-    const abortController = new AbortController();
+    abortControllerRef.current = new AbortController();
     
-    // Pass the abort signal to loadData (needs modification to accept it)
-    loadData(abortController.signal); // << RESTORE call
-    // console.log("TEMPORARILY SKIPPING loadData() on mount");
+    // Pass the abort signal to loadData
+    loadData(abortControllerRef.current.signal);
     
     // Cleanup function to abort the fetch on unmount
     return () => {
       console.log("DataProvider unmounting - Aborting fetch");
-      abortController.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     };
-  }, []); // Still run only on mount
+  }, []); // Run only on mount
 
   // Wrap loadData in useCallback
-  // Modify loadData to accept and use the signal
-  const loadData = useCallback(async (fetchSignal) => { // Accept signal
+  const loadData = useCallback(async (signal) => {
     console.log("loadData function called");
+    
+    // If there's an existing fetch in progress, abort it
+    if (abortControllerRef.current && !signal) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = new AbortController();
+      signal = abortControllerRef.current.signal;
+    }
     
     let newLoading = true;
     let newError = null;
     let newData = null;
     let newFileStatus = { "complete-data.json": { loaded: false, status: 'loading' } };
 
-    const fetchWithRetry = async (url, signal, retries = 0, delay = 1000) => { // Accept signal
+    // Update state to show loading
+    setState(prevState => ({ 
+      ...prevState, 
+      isLoading: true,
+      error: null,
+      fileStatus: {
+        ...prevState.fileStatus,
+        "complete-data.json": { loaded: false, status: 'loading' }
+      }
+    }));
+
+    const fetchWithRetry = async (url, signal, retries = 2, delay = 1000) => {
       try {
         console.log(`>>> Attempting fetch for: ${url}`);
-        // Pass the signal to the fetch options
-        const response = await fetch(url, { signal }); 
+        const response = await fetch(url, { signal });
+        
         if (!response.ok) {
-          // Check if the error was due to aborting
           if (signal?.aborted) {
             throw new Error('Fetch aborted');
           }
@@ -67,40 +88,38 @@ export const DataProvider = ({ children }) => {
         }
         return await response.json();
       } catch (error) {
-        // Don't throw an error if it was intentionally aborted
         if (error.name === 'AbortError') { 
           console.log('Fetch was aborted.');
-          // We might want to return null or a specific indicator
-          return null; // Or throw a specific error if needed elsewhere
+          return null;
         }
-        throw error; 
+        
+        if (retries > 0) {
+          console.log(`Retrying fetch (${retries} attempts left)...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(url, signal, retries - 1, delay * 1.5);
+        }
+        
+        throw error;
       }
     };
     
     try {
       const primaryUrl = `${window.location.origin}/data/complete-data.json`;
-      // Pass the signal down to fetchWithRetry
-      const jsonData = await fetchWithRetry(primaryUrl, fetchSignal);
+      const jsonData = await fetchWithRetry(primaryUrl, signal);
       
-      // If fetch was aborted, jsonData will be null, handle appropriately
-      if (jsonData !== null) { 
+      if (jsonData !== null) {
         console.log("Successfully loaded complete data via fetch");
         newLoading = false;
         newError = null;
         newData = jsonData;
         newFileStatus = { "complete-data.json": { loaded: true, status: 'success' } };
       } else {
-        // Fetch was aborted, maybe keep loading or set a specific state?
-        // For now, let's just avoid setting data and keep loading true? Or set error?
-        // Let's treat abort like an error for simplicity now, though it's not really.
-         newLoading = false; // Or maybe true if we want to retry?
-         newError = `Fetch aborted`; 
-         newData = null;
-         newFileStatus = { "complete-data.json": { loaded: false, status: 'aborted' } };
+        newLoading = false;
+        newError = `Data fetch was aborted`;
+        newData = null;
+        newFileStatus = { "complete-data.json": { loaded: false, status: 'aborted' } };
       }
-
     } catch (error) {
-      // Handle non-abort errors
       if (error.name !== 'AbortError') {
         console.error("Error during data fetch:", error);
         newLoading = false;
@@ -108,26 +127,22 @@ export const DataProvider = ({ children }) => {
         newData = null;
         newFileStatus = { "complete-data.json": { loaded: false, status: 'error', error: error.message } };
       }
-      // If it was AbortError, it should have been handled inside the try block or fetchWithRetry
-      
     } finally {
       console.log("Updating state in finally block");
-      // Only update state if the fetch wasn't aborted mid-way 
-      // (Checking if newError contains 'Fetch aborted' is a bit fragile, but works for now)
-      if (newError !== 'Fetch aborted') { 
-          setState(prevState => ({ 
-            ...prevState, 
-            isLoading: newLoading,
-            error: newError,
-            data: newData,
-            lastUpdated: new Date(),
-            fileStatus: {
-               ...prevState.fileStatus,
-               ...newFileStatus 
-            }
-          }));
+      if (!signal?.aborted) {
+        setState(prevState => ({ 
+          ...prevState, 
+          isLoading: newLoading,
+          error: newError,
+          data: newData || prevState.data,
+          lastUpdated: new Date(),
+          fileStatus: {
+            ...prevState.fileStatus,
+            ...newFileStatus 
+          }
+        }));
       } else {
-          console.log("Skipping final state update due to fetch abort.");
+        console.log("Skipping final state update due to fetch abort.");
       }
     }
   }, []);
@@ -139,10 +154,14 @@ export const DataProvider = ({ children }) => {
     data: state.data,
     fileStatus: state.fileStatus,
     lastUpdated: state.lastUpdated,
-    // Add a wrapper function for logging refreshData calls
     refreshData: () => {
-      console.log("*** refreshData called via context! ***"); // Add specific log
-      loadData(); // Call the actual loadData
+      console.log("*** refreshData called via context! ***");
+      // Create a new AbortController for this refresh
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+      loadData(abortControllerRef.current.signal);
     }
   }), [
     state.isLoading, 
@@ -150,7 +169,7 @@ export const DataProvider = ({ children }) => {
     state.data, 
     state.fileStatus, 
     state.lastUpdated, 
-    loadData // Keep loadData as dependency for the memo
+    loadData
   ]);
 
   return (

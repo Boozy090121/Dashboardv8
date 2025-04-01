@@ -1,35 +1,35 @@
-import * as React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDataContext } from './DataContext.js';
-import DashboardGrid from './DashboardGrid';
-import MetricCard from './MetricCard';
-import AdvancedChart from './AdvancedChart';
+import DashboardGrid from './dashboard-grid';
+import MetricCard from './metric-card';
+import AdvancedChart from './advanced-chart';
 import { Settings, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 
 const EnhancedOverviewDashboard = () => {
   const { data, isLoading, error, refreshData } = useDataContext();
   
   // Additional state for enhanced widgets
-  const [rftDrilldownData, setRftDrilldownData] = React.useState(null);
-  const [timeRange, setTimeRange] = React.useState('6m'); // 1m, 3m, 6m, 12m, ytd
+  const [rftDrilldownData, setRftDrilldownData] = useState(null);
+  const [timeRange, setTimeRange] = useState('6m'); // 1m, 3m, 6m, 12m, ytd
   
   // Track whether charts have been initialized
-  const [chartsReady, setChartsReady] = React.useState(false);
+  const [chartsReady, setChartsReady] = useState(false);
   
   // Once data is loaded, prepare charts
-  React.useEffect(() => {
+  useEffect(() => {
     if (data && !isLoading) {
       setChartsReady(true);
     }
   }, [data, isLoading]);
   
   // Wrap handleRefresh in useCallback
-  const handleRefresh = React.useCallback((widgetId) => {
-    console.log(`Refreshing widget: ${widgetId}`); // Add log for debugging
+  const handleRefresh = useCallback((widgetId) => {
+    console.log(`Refreshing widget: ${widgetId}`);
     refreshData();
   }, [refreshData]); // Dependency: refreshData
   
-  // Generate RFT breakdown data for drill-down
-  const handleRftDrillDown = (clickedData, index) => {
+  // Generate RFT breakdown data for drill-down with useMemo
+  const handleRftDrillDown = useCallback((clickedData, index) => {
     // Generate breakdown data based on clicked slice
     if (clickedData?.name === 'Pass') {
       return {
@@ -52,10 +52,10 @@ const EnhancedOverviewDashboard = () => {
         ]
       };
     }
-  };
+  }, [data]); // Add data as dependency
   
-  // Generate trend data for cycle time
-  const generateCycleTimeTrendData = () => {
+  // Generate trend data for cycle time with useMemo
+  const cycleTimeTrendData = useMemo(() => {
     if (data?.processMetrics?.cycleTimesByMonth) {
       return data.processMetrics.cycleTimesByMonth.map(item => ({
         month: item.month,
@@ -72,10 +72,10 @@ const EnhancedOverviewDashboard = () => {
       { month: '2025-05', value: 19.8 },
       { month: '2025-06', value: 18.5 }
     ];
-  };
+  }, [data]); // Add data as dependency
   
-  // Generate dept performance data
-  const generateDeptPerformanceData = () => {
+  // Generate dept performance data with useMemo
+  const deptPerformanceData = useMemo(() => {
     if (data?.internalRFT?.departmentPerformance) {
       return data.internalRFT.departmentPerformance.map(dept => ({
         name: dept.department,
@@ -91,7 +91,7 @@ const EnhancedOverviewDashboard = () => {
       { name: 'Packaging', rftRate: 91.2, target: 95 },
       { name: 'Logistics', rftRate: 86.7, target: 95 }
     ];
-  };
+  }, [data]); // Add data as dependency
   
   // Loading state
   if (isLoading && !chartsReady) {
@@ -234,7 +234,7 @@ const EnhancedOverviewDashboard = () => {
             (data?.processMetrics?.totalCycleTime?.average || 21.8) <= 22 ? 'normal' :
             (data?.processMetrics?.totalCycleTime?.average || 21.8) <= 25 ? 'warning' : 'critical'
           }
-          trendData={generateCycleTimeTrendData()}
+          trendData={cycleTimeTrendData}
           showDetails={true}
           detailMetrics={[
             { label: 'Min Observed', value: data?.processMetrics?.totalCycleTime?.minimum || 16.2 },
@@ -292,7 +292,7 @@ const EnhancedOverviewDashboard = () => {
         >
           <AdvancedChart
             title="RFT Rate by Department"
-            data={generateDeptPerformanceData()}
+            data={deptPerformanceData}
             type="bar"
             xDataKey="name"
             yDataKey="rftRate"
@@ -403,7 +403,7 @@ const EnhancedOverviewDashboard = () => {
                   <TrendingUp size={18} />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Quality department is exceeding RFT targets with a {generateDeptPerformanceData()[1].rftRate}% performance rate,
+                  Quality department is exceeding RFT targets with a {deptPerformanceData[1].rftRate}% performance rate,
                   providing an opportunity to identify best practices.
                 </p>
               </li>
@@ -427,7 +427,7 @@ const EnhancedOverviewDashboard = () => {
                   <TrendingDown size={18} />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Logistics department RFT rate ({generateDeptPerformanceData()[3].rftRate}%) is significantly below target.
+                  Logistics department RFT rate ({deptPerformanceData[3].rftRate}%) is significantly below target.
                   Consider targeted process improvements in this area.
                 </p>
               </li>
